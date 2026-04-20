@@ -62,6 +62,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile.frontend
           push: false
+          load: true
           tags: sentiment-dashboard:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -71,27 +72,12 @@ jobs:
     needs: test
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
-      - name: Install model-download dependencies
-        run: pip install huggingface_hub loguru pandas pyarrow
-      - name: Download fine-tuned model from HuggingFace Hub
+      - name: Create reference data
         run: |
-          echo "==========================================================="
-          echo "Fetching fine-tuned DistilBERT from Hugging Face Hub:"
-          echo "https://huggingface.co/Jahanvi16/Sentiment_analys_ak_jg"
-          echo "==========================================================="
-          python scripts/model_fetch.py
-        env:
-          HF_MODEL_REPO: Jahanvi16/Sentiment_analys_ak_jg
-      - name: Create reference data for drift detection
-        run: |
+          pip install pandas pyarrow
+          mkdir -p data/processed
           python -c "
           import pandas as pd
-          from pathlib import Path
-          Path('data/processed').mkdir(parents=True, exist_ok=True)
           pd.DataFrame({
               'text': [f'Sample review {i}' for i in range(100)],
               'label': [i % 2 for i in range(100)],
@@ -102,15 +88,18 @@ jobs:
           "
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Build backend Docker image with real fine-tuned model
+      - name: Build backend Docker image (HF model fetched during build)
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: /home/m25csa012/MLops_project2/Sentiment_Analysis/docker/Dockerfile
+          file: ./Dockerfile
           push: false
+          load: true
           tags: sentiment-api:ci-${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            HF_MODEL_REPO=Jahanvi16/sentimentAnalysisDistilBERT
 
   summary:
     runs-on: ubuntu-latest
@@ -119,18 +108,14 @@ jobs:
     steps:
       - name: CI Summary
         run: |
-          echo "=========================================="
+          echo "========================================"
           echo "MLOps CI Pipeline Complete"
-          echo "=========================================="
-          echo "Lint:                        ${{ needs.lint.result }}"
-          echo "Tests:                       ${{ needs.test.result }}"
-          echo "Frontend image:              ${{ needs.docker-build-frontend.result }}"
-          echo "Backend image (prod model):  ${{ needs.docker-build-backend.result }}"
-          echo "=========================================="
-          echo ""
-          echo "Model source: Hugging Face Hub"
-          echo "  https://huggingface.co/Jahanvi16/sentimentAnalysisDistilBERT"
-          echo ""
-          echo "Production deployment:"
-          echo "  Backend:  https://sentiment-api-565865319827.asia-south1.run.app"
-          echo "  Frontend: https://sentiment-dashboard-565865319827.asia-south1.run.app"
+          echo "========================================"
+          echo "Lint:              ${{ needs.lint.result }}"
+          echo "Tests:             ${{ needs.test.result }}"
+          echo "Frontend image:    ${{ needs.docker-build-frontend.result }}"
+          echo "Backend image:     ${{ needs.docker-build-backend.result }}"
+          echo "========================================"
+          echo "Model: Jahanvi16/sentimentAnalysisDistilBERT"
+          echo "Backend Cloud Run: https://sentiment-api-565865319827.asia-south1.run.app"
+          echo "Frontend Cloud Run: https://sentiment-dashboard-565865319827.asia-south1.run.app"
