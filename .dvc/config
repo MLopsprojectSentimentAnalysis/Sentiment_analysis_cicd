@@ -1,6 +1,7 @@
 [core]
-    remote = gcs_remote
+    remote = storage
     autostage = true
-
 ['remote "gcs_remote"']
     url = gs://mlops-sentiment-data/dvc-cache
+['remote "storage"']
+    url = gs://run-sources-project-7b98dc63-2de4-4f60-8b8-asia-south1/dvc-store

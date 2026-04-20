@@ -173,3 +173,20 @@ jobs:
           assert r['status'] == 'ok', f'Health check failed: {r}'
           print('Smoke test passed:', r)
           "
+
+dvc remote add -d storage gs://{bucketname}/dvc store
+
+dvc add data/processed/reference.parquet
+dvc add data/processed/imdb/train_clean.parquet 2>/dev/null || echo "train.parquet not found - skipping"
+dvc add data/processed/imdb/test_clean.parquet 2>/dev/null || echo "test.parquet not found - skipping"
+dvc add data/processed/imdb/val_clean.parquet 2>/dev/null || echo "val.parquet not found - skipping"
+
+MLops_project2/Sentiment_Analysis/data/processed/imdb/train_clean.parquet
+
+ls -la data/processed/*.dvc 2>/dev/null
+
+dvc push 2>&1 | tail -20
+
+gcloud storage ls gs://run-sources-project-7b98dc63-2de4-4f60-8b8-asia-south1/dvc-store/ --project=project-7b9
+8dc63-2de4-4f60-8b8 2>&1 | head -10
+gs://run-sources-project-7b98dc63-2de4-4f60-8b8-asia-south1/dvc-store/files/
