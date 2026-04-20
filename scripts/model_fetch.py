@@ -248,21 +248,21 @@ from huggingface_hub import snapshot_download
 from loguru import logger
 
 MODEL_REPO = os.environ.get("HF_MODEL_REPO", "Jahanvi16/Sentiment_analys_ak_jg")
-LOCAL_PATH = "/home/m25csa012/MLops_project2/Sentiment_Analysis/models/bert-base-uncased/20260420_001343/best_model"
+# LOCAL_PATH = "/home/m25csa012/MLops_project2/Sentiment_Analysis/models/bert-base-uncased/20260420_001343/best_model"
 
 
 def main():
-    target = Path(LOCAL_PATH)
-    target.mkdir(parents=True, exist_ok=True)
+    # target = Path(LOCAL_PATH)
+    # target.mkdir(parents=True, exist_ok=True)
 
-    logger.info(f"Downloading {MODEL_REPO} to {target}...")
+    # logger.info(f"Downloading {MODEL_REPO} to {target}...")
 
-    hf_token = os.environ.get("HF_TOKEN")  # optional; required only for private repos
+    # hf_token = os.environ.get("HF_TOKEN")  # optional; required only for private repos
 
     try:
         snapshot_download(
             repo_id=MODEL_REPO,
-            local_dir=str(target),
+            # local_dir=str(target),
             token=hf_token,
             allow_patterns=[
                 "config.json",
