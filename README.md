@@ -267,8 +267,6 @@ Model weights out of Git. Weights are published to HuggingFace Hub and fetched a
 
 
 📄 Report
-Full IEEE-style report with figures, tables, and challenges discussion:
-
 Source: report/M25CSA012_M25CSA033_Project_Report.pdf
 
 
@@ -276,11 +274,6 @@ Source: report/M25CSA012_M25CSA033_Project_Report.pdf
 IIT Jodhpur AI group for DGX cluster access (2× NVIDIA V100 GPUs)
 HuggingFace for transformer models and datasets library
 IMDb dataset curators (Maas et al., 2011)
-
-
-📜 License
-Apache License 2.0 — see LICENSE for details.
-Model weights inherit the Apache 2.0 license from the base distilbert-base-uncased model.
 
 
 👥 Authors
