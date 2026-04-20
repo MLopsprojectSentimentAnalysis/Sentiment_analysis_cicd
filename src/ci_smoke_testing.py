@@ -32,8 +32,8 @@ trainer = Trainer(
         per_device_train_batch_size=4,
         max_steps=5,   # Just 5 training steps (~30 sec)
         logging_steps=1,
-        no_cuda=True,  # CPU only
-        report_to="none",
+        # no_cuda=True,  # CPU only
+        # report_to="none",
     ),
     train_dataset=ds,
 )

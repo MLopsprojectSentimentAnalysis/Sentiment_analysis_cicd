@@ -70,3 +70,4 @@ gcp:
   cloud_run_service: "sentiment-api"
   compute_engine_zone: "asia-south1-c"
 
+# EOF
