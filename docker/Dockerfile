@@ -28,7 +28,7 @@ COPY configs/ /app/configs/
 # Model repo: https://huggingface.co/Jahanvi16/sentimentAnalysisDistilBERT
 # This replaces the old "COPY models/..." approach so the build works in any
 # environment (CI, laptop, Cloud Build) without requiring local weights.
-ARG HF_MODEL_REPO=Jahanvi16/sentimentAnalysisDistilBERT
+ARG HF_MODEL_REPO=Jahanvi16/Sentiment_analys_ak_jg
 ENV HF_MODEL_REPO=${HF_MODEL_REPO}
 
 RUN mkdir -p /app/models/distilbert-base-uncased/best_model && \
@@ -36,7 +36,6 @@ RUN mkdir -p /app/models/distilbert-base-uncased/best_model && \
 from huggingface_hub import snapshot_download; \
 snapshot_download( \
     repo_id='${HF_MODEL_REPO}', \
-    local_dir='/app/models/distilbert-base-uncased/best_model', \
     allow_patterns=['config.json', 'model.safetensors', 'tokenizer.json', 'tokenizer_config.json', 'special_tokens_map.json', 'vocab.txt'] \
 )" && \
     echo "Model downloaded from $HF_MODEL_REPO"
@@ -45,7 +44,7 @@ snapshot_download( \
 COPY data/processed/reference.parquet /app/data/processed/reference.parquet
 
 # Update config to point at the baked-in model path
-RUN sed -i 's|local_fallback_path:.*|local_fallback_path: "models/distilbert-base-uncased/best_model"|' configs/config.yaml
+# RUN sed -i 's|local_fallback_path:.*|local_fallback_path: "models/distilbert-base-uncased/best_model"|' configs/config.yaml
 
 # Cloud Run uses port 8080 by default and injects PORT env var
 ENV PORT=8080
