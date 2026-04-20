@@ -273,11 +273,11 @@ def main():
                 "vocab.txt",
             ],
         )
-        logger.info(f"Model downloaded to {target}")
+        logger.info(f"Model downloaded")
 
         # Verify critical files
         required = ["config.json", "model.safetensors", "tokenizer.json"]
-        missing = [f for f in required if not (target / f).exists()]
+        missing = [f for f in required if not ("target" / f).exists()]
         if missing:
             logger.error(f"Missing required files: {missing}")
             sys.exit(1)
