@@ -106,7 +106,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
+          file: /home/m25csa012/MLops_project2/Sentiment_Analysis/docker/Dockerfile
           push: false
           tags: sentiment-api:ci-${{ github.sha }}
           cache-from: type=gha
