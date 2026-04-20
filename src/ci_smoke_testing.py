@@ -4,7 +4,7 @@ Purpose: verify the full training pipeline (data → model → metrics → MLflo
          works end-to-end, triggered automatically by CI.
 Scale: 100 samples, 1 epoch, ~3 min on CI runner.
 """
-import mlflow
+# import mlflow
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, Trainer, TrainingArguments
 from datasets import load_dataset
 import numpy as np
