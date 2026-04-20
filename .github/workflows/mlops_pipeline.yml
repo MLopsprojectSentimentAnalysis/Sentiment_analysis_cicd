@@ -87,6 +87,7 @@ jobs:
           pip install pyyaml
       - run: |
           python -c "import yaml; from pathlib import Path; cfg = yaml.safe_load(Path('configs/config.yaml').read_text()); print('Active model:', cfg.get('active_model', 'unknown')); print('Training config valid')"
+          python src/ci_smoke_testing.py
       - run: |
           echo '::notice title=Retraining Required::Training code or data changed. Manual GPU retraining on DGX required before deployment.'
 
