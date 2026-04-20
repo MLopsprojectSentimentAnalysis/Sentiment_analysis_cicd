@@ -277,6 +277,7 @@ IMDb dataset curators (Maas et al., 2011)
 
 
 👥 Authors
+
 Jahanvi Gajera (M25CSA012) 
 
 Akanksha Kapil (M25CSA033)
