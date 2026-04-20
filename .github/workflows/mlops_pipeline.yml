@@ -85,7 +85,7 @@ jobs:
       - run: |
           pip install transformers datasets torch --extra-index-url https://download.pytorch.org/whl/cpu
       - name: REAL training dry-run (100 samples, CPU, ~3 min)
-        run: python scripts/ci_training_smoke_test.py
+        run: python src/ci_training_smoke_test.py
       - name: Training pipeline validated
         run: echo "::notice::Training pipeline automation verified. Full training runs on DGX with 25k samples."
 
