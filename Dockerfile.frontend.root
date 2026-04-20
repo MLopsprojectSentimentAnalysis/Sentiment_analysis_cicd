@@ -1,0 +1,28 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install minimal system deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy frontend requirements only (no torch, no transformers)
+COPY docker/requirements-frontend.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy only the dashboard code and configs
+COPY dashboards/ /app/dashboards/
+COPY configs/ /app/configs/
+
+# Cloud Run default port
+ENV PORT=8080
+ENV STREAMLIT_SERVER_HEADLESS=true
+ENV STREAMLIT_SERVER_ADDRESS=0.0.0.0
+EXPOSE 8080
+
+# API URL will be set as env var at deploy time
+ENV API_BASE_URL=""
+
+# Start Streamlit
+CMD streamlit run dashboards/app.py --server.port=$PORT --server.address=0.0.0.0 --server.headless=true

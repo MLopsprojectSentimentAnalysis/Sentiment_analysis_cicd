@@ -22,7 +22,7 @@ gcp-key.json
 train.py.bak2
 train.py.bak
 *.csv
-*.parquet
+# *.parquet
 *.feather
 *.arrow
 *.h5
