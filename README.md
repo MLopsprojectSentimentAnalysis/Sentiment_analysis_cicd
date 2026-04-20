@@ -85,65 +85,11 @@ Click the URLs above to verify the pipeline is live. Both services auto-scale on
 
 📐 Model Comparison
 
-
-
-
-Model
-
-Accuracy
-
-F1
-
-Precision
-
-Recall
-
-Status
-
-
-
-
-
-BERT-base
-
-0.8936
-
-0.8936
-
-0.8939
-
-0.8936
-
-Archived (v1)
-
-
-
-DistilBERT
-
-0.8904
-
-0.8904
-
-0.8907
-
-0.8904
-
-Production (v2) ⭐
-
-
-
-MiniLM-L6-v2
-
-0.8784
-
-0.8784
-
-0.8794
-
-0.8784
-
-Archived (v3)
-
+| Model            | Accuracy | F1     | Precision | Recall  | Status              |
+|------------------|----------|--------|-----------|---------|---------------------|
+| BERT-base        | 0.8936   | 0.8936 | 0.8939    | 0.8936  | Archived (v1)       |
+| DistilBERT       | 0.8904   | 0.8904 | 0.8907    | 0.8904  | Production (v2) ⭐   |
+| MiniLM-L6-v2     | 0.8784   | 0.8784 | 0.8794    | 0.8784  | Archived (v3)       |
 
 
 Evaluated on 5,000 held-out IMDb reviews. DistilBERT selected for its accuracy-to-size trade-off on Cloud Run.
@@ -156,56 +102,12 @@ Every push is routed through one of four execution paths based on which files ch
 
 
 
-Path
-
-Trigger
-
-Jobs Run
-
-Runtime
-
-
-
-
-
-A
-
-src/training/, configs/, data/
-
-training-smoke-test + backend build
-
-~12 min
-
-
-
-B
-
-src/api/, backend Dockerfile
-
-backend build only
-
-~10 min
-
-
-
-C
-
-dashboards/, frontend Dockerfile
-
-frontend build only
-
-~3 min
-
-
-
-D
-
-*.md, docs
-
-lint + test only
-
-~45 s
-
+| Path                                    | Trigger                                 | Jobs Run                        | Runtime   |
+|-----------------------------------------|-----------------------------------------|---------------------------------|-----------|
+| `src/training/`, `configs/`, `data/`    | training-smoke-test + backend build     | ~12 min                         | ⏱️ 12m    |
+| `src/api/`, `backend Dockerfile`        | backend build only                      | ~10 min                         | ⏱️ 10m    |
+| `dashboards/`, `frontend Dockerfile`    | frontend build only                     | ~3 min                          | ⏱️ 3m     |
+| `*.md`, `docs`                          | lint + test only                        | ~45 s                           | ⚡ 45s     |
 
 
 Implemented with dorny/paths-filter@v3. Reduces average CI time by ~60 %.
@@ -331,69 +233,17 @@ Returns PSI / JS / KS statistics per input feature, flagging drift when PSI > 0.
 
 🛠️ Tech Stack
 
-
-
-
-Layer
-
-Tools
-
-
-
-
-
-ML
-
-PyTorch, HuggingFace Transformers, Accelerate (fp16)
-
-
-
-Tracking
-
-MLflow (tracking + registry + rollback)
-
-
-
-Data
-
-DVC + Google Cloud Storage
-
-
-
-API
-
-FastAPI + uvicorn
-
-
-
-Frontend
-
-Streamlit
-
-
-
-Drift
-
-PSI, Jensen-Shannon, Kolmogorov-Smirnov
-
-
-
-CI/CD
-
-GitHub Actions + dorny/paths-filter
-
-
-
-Deploy
-
-Docker multi-stage, Google Cloud Run
-
-
-
-Monitoring
-
-Prometheus metrics endpoint
-
+| Layer          | Tools                                                                 |
+|----------------|-----------------------------------------------------------------------|
+| **ML**         | PyTorch, HuggingFace Transformers, Accelerate (fp16)                  |
+| **Tracking**   | MLflow (tracking + registry + rollback)                               |
+| **Data**       | DVC + Google Cloud Storage                                            |
+| **API**        | FastAPI + uvicorn                                                     |
+| **Frontend**   | Streamlit                                                             |
+| **Drift**      | PSI, Jensen-Shannon, Kolmogorov-Smirnov                               |
+| **CI/CD**      | GitHub Actions + dorny/paths-filter                                   |
+| **Deploy**     | Docker multi-stage, Google Cloud Run                                  |
+| **Monitoring** | Prometheus metrics endpoint                                           |
 
 
 
@@ -401,50 +251,11 @@ Prometheus metrics endpoint
 To validate drift detection, 162 predictions with deliberately skewed short-text inputs ("OK", "meh") were sent against the IMDb reference distribution:
 
 
-
-
-
-Feature
-
-PSI
-
-Threshold
-
-Flag
-
-
-
-
-
-avg_word_length
-
-21.3
-
-0.2
-
-🚨 DRIFT
-
-
-
-word_count
-
-19.1
-
-0.2
-
-🚨 DRIFT
-
-
-
-text_length
-
-5.79
-
-0.2
-
-🚨 DRIFT
-
-
+| Feature           | PSI    | Threshold | Flag           |
+|-------------------|--------|-----------|----------------|
+| avg_word_length   | 21.3   | 0.2       | 🚨 DRIFT       |
+| word_count        | 19.1   | 0.2       | 🚨 DRIFT       |
+| text_length       | 5.79   | 0.2       | 🚨 DRIFT       |
 
 The detector correctly flagged the distribution shift — two orders of magnitude above threshold.
 
