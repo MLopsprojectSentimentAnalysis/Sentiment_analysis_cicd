@@ -84,6 +84,8 @@ jobs:
           cache: pip
       - run: |
           pip install transformers datasets torch --extra-index-url https://download.pytorch.org/whl/cpu
+          pip install accelerate>=1.1.0
+          pip install transformers[torch]
       - name: REAL training dry-run (100 samples, CPU, ~3 min)
         run: python src/ci_smoke_testing.py
       - name: Training pipeline validated
