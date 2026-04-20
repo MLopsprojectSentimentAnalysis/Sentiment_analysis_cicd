@@ -25,5 +25,3 @@ pyyaml>=6.0
 loguru>=0.7
 python-dotenv>=1.0
 
-# Optional: GCS for production
-google-cloud-storage>=2.0huggingface_hub>=0.23,<1.0
