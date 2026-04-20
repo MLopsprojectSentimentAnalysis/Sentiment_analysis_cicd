@@ -1,0 +1,124 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb
+# If you want to keep notebook structure but ignore outputs, uncomment:
+# *.ipynb
+# !*.ipynb  # would require more complex rules, simpler to just ignore notebooks if large
+
+# Data & large binary files (change or remove if you need to version small data samples)
+data/
+gcp-key.json
+train.py.bak2
+train.py.bak
+*.csv
+*.parquet
+*.feather
+*.arrow
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.joblib
+
+# Model files (often large)
+models/
+*.pth
+*.pt
+*.h5
+*.onnx
+*.tflite
+*.joblib
+*.pickle
+*.pkl
+*.sav
+*.bin
+*.caffemodel
+*.pb
+*.t7
+
+# MLflow
+mlruns/
+mlflow.db
+*.mlflow
+mlflow.log
+
+# Logs
+logs/
+*.log
+fastapi.log
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment variables
+.env.example
+.env
+.env.local
+.env.*.local
+
+# IDE / editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Docker (ignore volumes if mounted locally)
+docker/volumes/
+*.pid
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# pyenv / pyproject
+.python-version
+
+# Compiled notebooks (if using papermill etc.)
+*.nbconvert.ipynb
+
+# Optional: large checkpoint files from training
+checkpoints/
+*.ckpt
+*.weights
+*.hdf5
+
+# DVC (if you use DVC for large files, keep .dvc but ignore cache)
+.dvc/cache/
+.dvc/tmp/

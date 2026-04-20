@@ -1,0 +1,71 @@
+project:
+  name: mlops-sentiment-analysis
+  version: "1.0.0"
+
+data:
+  sources:
+    imdb: "imdb"
+    amazon: "amazon_polarity"
+    yelp: "yelp_polarity"
+  active_source: "imdb"
+  train_size: 0.8
+  val_size: 0.1
+  test_size: 0.1
+  max_samples: 25000
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  gcs_bucket: "mlops-sentiment-data"
+  gcs_raw_path: "data/raw"
+
+model:
+  candidates:
+    - bert-base-uncased
+    - distilbert-base-uncased
+    - sentence-transformers/all-MiniLM-L6-v2
+  active_model: "distilbert-base-uncased"
+  num_labels: 2
+  max_length: 128
+  output_dir: "models"
+  local_fallback_path: "models/distilbert-base-uncased/20260420_001626/best_model"
+
+training:
+  batch_size: 32
+  num_epochs: 3
+  learning_rate: 2.0e-5
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  fp16: true
+  gradient_accumulation_steps: 1
+  eval_strategy: "epoch"
+  save_strategy: "epoch"
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_f1"
+
+mlflow:
+  tracking_uri: "http://localhost:5555"
+  experiment_name: "sentiment-analysis"
+  registered_model_name: "sentiment-classifier"
+  min_accuracy_threshold: 0.80
+
+monitoring:
+  reference_data_path: "data/processed/reference.parquet"
+  drift_check_interval_seconds: 300
+  psi_threshold: 0.2
+  js_divergence_threshold: 0.1
+  prediction_drift_threshold: 0.15
+  min_samples_for_drift: 50
+  alert_on_drift: true
+  prometheus_port: 8051
+
+api:
+  host: "0.0.0.0"
+  port: 8060
+  workers: 2
+  log_predictions: true
+  prediction_log_path: "logs/predictions.jsonl"
+
+gcp:
+  project_id: "project-7b98dc63-2de4-4f60-8b8"
+  region: "asia-south1"
+  cloud_run_service: "sentiment-api"
+  compute_engine_zone: "asia-south1-c"

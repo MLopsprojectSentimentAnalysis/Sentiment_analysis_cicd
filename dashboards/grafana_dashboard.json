@@ -1,0 +1,101 @@
+{
+  "title": "Sentiment API - MLOps Dashboard",
+  "uid": "sentiment-mlops",
+  "schemaVersion": 38,
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Total Predictions",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
+      "targets": [{
+        "expr": "sum(sentiment_predictions_total)",
+        "legendFormat": "Total"
+      }],
+      "options": { "colorMode": "background", "graphMode": "area" }
+    },
+    {
+      "id": 2,
+      "title": "Positive vs Negative Rate",
+      "type": "piechart",
+      "gridPos": { "x": 4, "y": 0, "w": 6, "h": 6 },
+      "targets": [
+        { "expr": "sentiment_predictions_total{label='positive'}", "legendFormat": "Positive" },
+        { "expr": "sentiment_predictions_total{label='negative'}", "legendFormat": "Negative" }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Prediction Latency (p50 / p95 / p99)",
+      "type": "timeseries",
+      "gridPos": { "x": 10, "y": 0, "w": 14, "h": 6 },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, rate(sentiment_prediction_latency_seconds_bucket[5m]))", "legendFormat": "p50" },
+        { "expr": "histogram_quantile(0.95, rate(sentiment_prediction_latency_seconds_bucket[5m]))", "legendFormat": "p95" },
+        { "expr": "histogram_quantile(0.99, rate(sentiment_prediction_latency_seconds_bucket[5m]))", "legendFormat": "p99" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 4,
+      "title": "Drift Detected",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 4, "w": 4, "h": 4 },
+      "targets": [{ "expr": "sentiment_drift_detected", "legendFormat": "Drift" }],
+      "options": {
+        "colorMode": "background",
+        "thresholds": {
+          "steps": [
+            { "color": "green", "value": 0 },
+            { "color": "red", "value": 1 }
+          ]
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "PSI Score",
+      "type": "timeseries",
+      "gridPos": { "x": 4, "y": 6, "w": 10, "h": 6 },
+      "targets": [{ "expr": "sentiment_psi_score", "legendFormat": "PSI" }]
+    },
+    {
+      "id": 6,
+      "title": "JS Divergence",
+      "type": "timeseries",
+      "gridPos": { "x": 14, "y": 6, "w": 10, "h": 6 },
+      "targets": [
+        { "expr": "sentiment_js_divergence", "legendFormat": "Feature JS" },
+        { "expr": "sentiment_prediction_drift", "legendFormat": "Prediction JS" }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Drift Alerts Fired",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 8, "w": 4, "h": 4 },
+      "targets": [{ "expr": "sentiment_drift_alerts_total", "legendFormat": "Alerts" }]
+    },
+    {
+      "id": 8,
+      "title": "Model Version",
+      "type": "stat",
+      "gridPos": { "x": 4, "y": 12, "w": 4, "h": 4 },
+      "targets": [{ "expr": "sentiment_model_version", "legendFormat": "Version" }]
+    },
+    {
+      "id": 9,
+      "title": "Confidence Distribution",
+      "type": "histogram",
+      "gridPos": { "x": 8, "y": 12, "w": 16, "h": 6 },
+      "targets": [{
+        "expr": "rate(sentiment_confidence_score_bucket[10m])",
+        "legendFormat": "{{le}}"
+      }]
+    }
+  ],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {}
+}

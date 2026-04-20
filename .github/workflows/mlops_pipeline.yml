@@ -1,0 +1,142 @@
+name: MLOps CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  GCP_REGION: asia-south1
+  BACKEND_SERVICE: sentiment-api
+  FRONTEND_SERVICE: sentiment-dashboard
+  REPO_NAME: sentiment-api-repo
+
+jobs:
+  # ========== TEST ==========
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Run unit tests
+        run: pytest tests/ -v --tb=short
+        env:
+          PYTHONPATH: .
+
+  # ========== BUILD & DEPLOY BACKEND ==========
+  backend:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Build & push backend image
+        run: |
+          IMAGE="${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/${{ env.REPO_NAME }}/${{ env.BACKEND_SERVICE }}"
+          docker build -f docker/Dockerfile.backend -t $IMAGE:${{ github.sha }} -t $IMAGE:latest .
+          docker push $IMAGE:${{ github.sha }}
+          docker push $IMAGE:latest
+
+      - name: Deploy backend to Cloud Run
+        run: |
+          IMAGE="${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/${{ env.REPO_NAME }}/${{ env.BACKEND_SERVICE }}"
+          gcloud run deploy ${{ env.BACKEND_SERVICE }} \
+            --image=$IMAGE:${{ github.sha }} \
+            --region=${{ env.GCP_REGION }} \
+            --platform=managed \
+            --allow-unauthenticated \
+            --memory=2Gi \
+            --cpu=2 \
+            --timeout=300 \
+            --max-instances=3 \
+            --project=${{ secrets.GCP_PROJECT }}
+
+      - name: Smoke test backend
+        run: |
+          URL=$(gcloud run services describe ${{ env.BACKEND_SERVICE }} \
+            --region=${{ env.GCP_REGION }} --format='value(status.url)' \
+            --project=${{ secrets.GCP_PROJECT }})
+          echo "Backend deployed at: $URL"
+          sleep 20
+          curl -sf "$URL/health" | python3 -c "
+          import sys, json
+          r = json.load(sys.stdin)
+          assert r['status'] == 'ok', f'Health failed: {r}'
+          print('Smoke test passed:', r)"
+          echo "BACKEND_URL=$URL" >> $GITHUB_ENV
+
+    outputs:
+      backend_url: ${{ env.BACKEND_URL }}
+
+  # ========== BUILD & DEPLOY FRONTEND ==========
+  frontend:
+    needs: backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Build & push frontend image
+        run: |
+          IMAGE="${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/${{ env.REPO_NAME }}/${{ env.FRONTEND_SERVICE }}"
+          docker build -f docker/Dockerfile.frontend -t $IMAGE:${{ github.sha }} -t $IMAGE:latest .
+          docker push $IMAGE:${{ github.sha }}
+          docker push $IMAGE:latest
+
+      - name: Get backend URL
+        id: backend-url
+        run: |
+          URL=$(gcloud run services describe ${{ env.BACKEND_SERVICE }} \
+            --region=${{ env.GCP_REGION }} --format='value(status.url)' \
+            --project=${{ secrets.GCP_PROJECT }})
+          echo "url=$URL" >> $GITHUB_OUTPUT
+
+      - name: Deploy frontend to Cloud Run
+        run: |
+          IMAGE="${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/${{ env.REPO_NAME }}/${{ env.FRONTEND_SERVICE }}"
+          gcloud run deploy ${{ env.FRONTEND_SERVICE }} \
+            --image=$IMAGE:${{ github.sha }} \
+            --region=${{ env.GCP_REGION }} \
+            --platform=managed \
+            --allow-unauthenticated \
+            --memory=512Mi \
+            --cpu=1 \
+            --max-instances=2 \
+            --set-env-vars="API_BASE_URL=${{ steps.backend-url.outputs.url }}" \
+            --project=${{ secrets.GCP_PROJECT }}
+
+      - name: Print URLs
+        run: |
+          BACKEND_URL=$(gcloud run services describe ${{ env.BACKEND_SERVICE }} \
+            --region=${{ env.GCP_REGION }} --format='value(status.url)' \
+            --project=${{ secrets.GCP_PROJECT }})
+          FRONTEND_URL=$(gcloud run services describe ${{ env.FRONTEND_SERVICE }} \
+            --region=${{ env.GCP_REGION }} --format='value(status.url)' \
+            --project=${{ secrets.GCP_PROJECT }})
+          echo "Backend:  $BACKEND_URL"
+          echo "Frontend: $FRONTEND_URL"

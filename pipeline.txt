@@ -1,0 +1,175 @@
+name: MLOps Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      force_retrain:
+        description: "Force model retraining"
+        required: false
+        default: "false"
+
+env:
+  GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
+  GCP_REGION: asia-south1
+  GCR_IMAGE: gcr.io/${{ secrets.GCP_PROJECT }}/sentiment-api
+  CLOUD_RUN_SERVICE: sentiment-api
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      data_changed:     ${{ steps.filter.outputs.data }}
+      training_changed: ${{ steps.filter.outputs.training }}
+      api_changed:      ${{ steps.filter.outputs.api }}
+      ui_changed:       ${{ steps.filter.outputs.ui }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            data:
+              - 'data/**'
+              - 'src/data/**'
+              - 'configs/config.yaml'
+            training:
+              - 'src/training/**'
+            api:
+              - 'src/api/**'
+              - 'src/inference/**'
+              - 'src/monitoring/**'
+            ui:
+              - 'dashboards/**'
+              - 'frontend/**'
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: pytest tests/ -v --tb=short
+        env:
+          PYTHONPATH: .
+
+  retrain:
+    needs: [detect-changes, test]
+    if: |
+      needs.detect-changes.outputs.data_changed     == 'true' ||
+      needs.detect-changes.outputs.training_changed == 'true' ||
+      github.event.inputs.force_retrain             == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ secrets.project-7b98dc63-2de4-4f60-8b8 }}
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Pull data from DVC remote
+        run: |
+          pip install dvc[gs] -q
+          dvc pull
+
+      - name: Trigger training on Compute Engine
+        run: |
+          gcloud compute ssh training-instance \
+            --zone=$GCP_REGION-a \
+            --command="cd /opt/Sentiment_Analysis && \
+                       git pull && \
+                       pip install -r requirements.txt -q && \
+                       python -m src.data.ingest && \
+                       python -m src.data.preprocess && \
+                       python -m src.training.train" \
+            --quiet
+      - name: Export best model path
+        id: model
+        run: echo "model_updated=true" >> $GITHUB_OUTPUT
+
+    outputs:
+      model_updated: ${{ steps.model.outputs.model_updated }}
+
+  build:
+    needs: [detect-changes, test, retrain]
+    if: |
+      always() &&
+      needs.test.result == 'success' && (
+        needs.retrain.outputs.model_updated == 'true' ||
+        needs.detect-changes.outputs.api_changed == 'true' ||
+        needs.detect-changes.outputs.ui_changed  == 'true'
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker --quiet
+
+      - name: Build and push image
+        run: |
+          docker build -f docker/Dockerfile \
+            -t $GCR_IMAGE:${{ github.sha }} \
+            -t $GCR_IMAGE:latest .
+          docker push $GCR_IMAGE:${{ github.sha }}
+          docker push $GCR_IMAGE:latest
+
+    outputs:
+      image_tag: ${{ github.sha }}
+
+  deploy:
+    needs: [build]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy $CLOUD_RUN_SERVICE \
+            --image=$GCR_IMAGE:${{ needs.build.outputs.image_tag }} \
+            --region=$GCP_REGION \
+            --platform=managed \
+            --allow-unauthenticated \
+            --port=8000 \
+            --memory=2Gi \
+            --cpu=2 \
+            --min-instances=1 \
+            --max-instances=10 \
+            --set-env-vars="MLFLOW_TRACKING_URI=${{ secrets.MLFLOW_TRACKING_URI }}"
+
+      - name: Run smoke test
+        run: |
+          SERVICE_URL=$(gcloud run services describe $CLOUD_RUN_SERVICE \
+            --region=$GCP_REGION --format='value(status.url)')
+          curl -sf "$SERVICE_URL/health" | python3 -c "
+          import sys, json
+          r = json.load(sys.stdin)
+          assert r['status'] == 'ok', f'Health check failed: {r}'
+          print('Smoke test passed:', r)
+          "
