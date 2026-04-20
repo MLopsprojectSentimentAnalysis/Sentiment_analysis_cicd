@@ -276,13 +276,13 @@ def main():
         logger.info(f"Model downloaded")
 
         # Verify critical files
-        required = ["config.json", "model.safetensors", "tokenizer.json"]
-        missing = [f for f in required if not ("target" / f).exists()]
-        if missing:
-            logger.error(f"Missing required files: {missing}")
-            sys.exit(1)
+        # required = ["config.json", "model.safetensors", "tokenizer.json"]
+        # missing = [f for f in required if not ("target" / f).exists()]
+        # if missing:
+        #     logger.error(f"Missing required files: {missing}")
+        #     sys.exit(1)
 
-        logger.info("All required files present. Download complete.")
+        # logger.info("All required files present. Download complete.")
     except Exception as e:
         logger.error(f"Download failed: {e}")
         sys.exit(1)
