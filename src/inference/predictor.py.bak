@@ -49,31 +49,19 @@ def load_production_model(cfg: dict):
         logger.info(f"Loading from local path: {local_path}")
         model, tokenizer = get_model_and_tokenizer(local_path, device)
 
-        # Skip MLflow in cloud deployments (no MLflow server inside container)
-        import os
-        if os.getenv("SKIP_MLFLOW", "false").lower() == "true":
-            logger.info("SKIP_MLFLOW=true; skipping MLflow version lookup")
+        try:
+            import mlflow
+            mlflow.set_tracking_uri(cfg["mlflow"]["tracking_uri"])
+            client = mlflow.tracking.MlflowClient()
+            prod_vers = client.get_latest_versions(
+                cfg["mlflow"]["registered_model_name"], stages=["Production"]
+            )
+            version = int(prod_vers[0].version) if prod_vers else 0
+            MODEL_VERSION_GAUGE.set(version)
+            logger.info(f"Tracking MLflow Production version: {version}")
+        except Exception as e:
+            logger.warning(f"Could not read MLflow version (non-fatal): {e}")
             MODEL_VERSION_GAUGE.set(0)
-        else:
-            try:
-                import mlflow
-                # Short timeout to avoid hanging on unreachable MLflow server
-                import socket
-                socket.setdefaulttimeout(3)
-                mlflow.set_tracking_uri(cfg["mlflow"]["tracking_uri"])
-                client = mlflow.tracking.MlflowClient()
-                prod_vers = client.get_latest_versions(
-                    cfg["mlflow"]["registered_model_name"], stages=["Production"]
-                )
-                version = int(prod_vers[0].version) if prod_vers else 0
-                MODEL_VERSION_GAUGE.set(version)
-                logger.info(f"Tracking MLflow Production version: {version}")
-                socket.setdefaulttimeout(None)
-            except Exception as e:
-                logger.warning(f"Could not read MLflow version (non-fatal): {e}")
-                MODEL_VERSION_GAUGE.set(0)
-                import socket
-                socket.setdefaulttimeout(None)
 
         return model, tokenizer, device
 

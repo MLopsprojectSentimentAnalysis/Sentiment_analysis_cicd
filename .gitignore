@@ -17,7 +17,7 @@ ENV/
 # !*.ipynb  # would require more complex rules, simpler to just ignore notebooks if large
 
 # Data & large binary files (change or remove if you need to version small data samples)
-data/
+# data/
 gcp-key.json
 train.py.bak2
 train.py.bak
