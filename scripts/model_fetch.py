@@ -263,7 +263,7 @@ def main():
         snapshot_download(
             repo_id=MODEL_REPO,
             # local_dir=str(target),
-            token=hf_token,
+            # token=hf_token,
             allow_patterns=[
                 "config.json",
                 "model.safetensors",
