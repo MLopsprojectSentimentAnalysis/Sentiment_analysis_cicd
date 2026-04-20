@@ -81,11 +81,11 @@ jobs:
         run: |
           echo "==========================================================="
           echo "Fetching fine-tuned DistilBERT from Hugging Face Hub:"
-          echo "https://huggingface.co/Jahanvi16/sentimentAnalysisDistilBERT"
+          echo "https://huggingface.co/Jahanvi16/Sentiment_analys_ak_jg"
           echo "==========================================================="
-          python scripts/download_model_from_hf.py
+          python scripts/model_fetch.py
         env:
-          HF_MODEL_REPO: Jahanvi16/sentimentAnalysisDistilBERT
+          HF_MODEL_REPO: Jahanvi16/Sentiment_analys_ak_jg
       - name: Create reference data for drift detection
         run: |
           python -c "
